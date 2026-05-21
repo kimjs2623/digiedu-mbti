@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나의 감사 일기장</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 부드러운 스크롤과 전환 효과 */
+        body { scroll-behavior: smooth; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-amber-50 min-h-screen flex items-center justify-center p-4 font-sans text-gray-800">
+
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-amber-100 flex flex-col h-[85vh]">
+        
+        <div class="bg-gradient-to-r from-amber-100 to-orange-100 p-5 text-center shadow-sm relative z-10">
+            <h1 class="text-2xl font-extrabold text-amber-800 tracking-tight">
+                <i class="fas fa-sun text-yellow-500 mr-2 animate-pulse"></i>나의 감사 일기
+            </h1>
+            <p class="text-sm text-amber-700 mt-1">오늘 하루, 어떤 감사한 일이 있었나요?</p>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+            
+            <div class="bg-gray-50 rounded-2xl p-4 shadow-inner border border-gray-100">
+                <div class="flex justify-between items-center mb-4 px-2">
+                    <button id="prev-month" class="text-amber-500 hover:text-amber-700 transition px-2 py-1 rounded-full hover:bg-amber-100">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h2 id="month-year" class="text-lg font-bold text-gray-700">2026년 5월</h2>
+                    <button id="next-month" class="text-amber-500 hover:text-amber-700 transition px-2 py-1 rounded-full hover:bg-amber-100">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-sm">
+                    </div>
+            </div>
+
+            <div class="flex flex-col flex-1">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <label id="entry-date-label" class="font-bold text-gray-700 flex items-center gap-2">
+                        <i class="far fa-calendar-check text-amber-500"></i>
+                        <span>선택된 날짜</span>
+                    </label>
+                    <span id="save-toast" class="text-xs font-bold text-green-500 opacity-0 transition-opacity duration-300">
+                        <i class="fas fa-check-circle mr-1"></i>저장 완료!
+                    </span>
+                </div>
+                
+                <textarea id="entry-textarea" 
+                    class="w-full flex-1 min-h-[150px] p-4 bg-yellow-50 border-2 border-yellow-200 rounded-2xl focus:outline-none focus:border-amber-400 focus:bg-white resize-none transition shadow-sm" 
+                    placeholder="사소한 것이라도 좋아요. 오늘 하루 감사했던 점을 3가지 적어보세요!&#10;&#10;1. &#10;2. &#10;3. "></textarea>
+                
+                <button id="save-btn" class="mt-4 w-full py-3 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold rounded-xl shadow-md hover:from-amber-500 hover:to-orange-500 hover:shadow-lg transform transition hover:-translate-y-0.5 active:translate-y-0">
+                    <i class="fas fa-pen-fancy mr-2"></i>일기 저장하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM 요소
+        const calendarGrid = document.getElementById('calendar-grid');
+        const monthYear = document.getElementById('month-year');
+        const entryDateLabel = document.getElementById('entry-date-label').querySelector('span');
+        const entryTextarea = document.getElementById('entry-textarea');
+        const saveToast = document.getElementById('save-toast');
+
+        // 상태 변수
+        let currentNavDate = new Date(); // 달력에서 현재 보고 있는 달
+        let selectedDate = new Date();   // 유저가 선택한 날짜
+
+        // 날짜를 YYYY-MM-DD 형식으로 변환 (로컬 스토리지 키 값으로 사용)
+        function formatDate(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        // 달력 렌더링
+        function renderCalendar() {
+            calendarGrid.innerHTML = '';
+            const year = currentNavDate.getFullYear();
+            const month = currentNavDate.getMonth();
+
+            monthYear.textContent = `${year}년 ${month + 1}월`;
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const lastDay = new Date(year, month + 1, 0).getDate();
+
+            // 1. 요일 헤더
+            const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+            daysOfWeek.forEach((day, index) => {
+                const el = document.createElement('div');
+                el.className = `text-center font-bold pb-2 text-xs ${index === 0 ? 'text-red-400' : index === 6 ? 'text-blue-400' : 'text-gray-400'}`;
+                el.textContent = day;
+                calendarGrid.appendChild(el);
+            });
+
+            // 2. 1일 전 빈 칸 채우기
+            for (let i = 0; i < firstDayIndex; i++) {
+                const el = document.createElement('div');
+                calendarGrid.appendChild(el);
+            }
+
+            // 3. 날짜 채우기
+            for (let i = 1; i <= lastDay; i++) {
+                const dateObj = new Date(year, month, i);
+                const dateString = formatDate(dateObj);
+
+                const el = document.createElement('div');
+                el.className = 'flex flex-col items-center justify-center p-1 rounded-lg cursor-pointer transition relative h-12 w-full mx-auto';
+
+                // 선택된 날짜 하이라이트
+                if (dateString === formatDate(selectedDate)) {
+                    el.classList.add('bg-amber-400', 'text-white', 'font-bold', 'shadow-md');
+                } else {
+                    el.classList.add('hover:bg-amber-100', 'text-gray-700');
+                }
+
+                // 날짜 숫자
+                const numSpan = document.createElement('span');
+                numSpan.textContent = i;
+                numSpan.className = 'z-10';
+                el.appendChild(numSpan);
+
+                // 로컬 스토리지에 저장된 일기가 있는지 확인하여 아이콘 표시
+                if (localStorage.getItem('gratitude_' + dateString)) {
+                    const marker = document.createElement('i');
+                    marker.className = `fas fa-heart text-[10px] absolute bottom-1 ${dateString === formatDate(selectedDate) ? 'text-white' : 'text-pink-400'}`;
+                    el.appendChild(marker);
+                }
+
+                // 날짜 클릭 이벤트
+                el.onclick = () => {
+                    selectedDate = dateObj;
+                    renderCalendar();
+                    loadEntry();
+                };
+
+                calendarGrid.appendChild(el);
+            }
+        }
+
+        // 선택된 날짜의 일기 불러오기
+        function loadEntry() {
+            const dateString = formatDate(selectedDate);
+            
+            // 라벨 업데이트
+            const days = ['일', '월', '화', '수', '목', '금', '토'];
+            const dayName = days[selectedDate.getDay()];
+            entryDateLabel.textContent = `${selectedDate.getFullYear()}년 ${selectedDate.getMonth() + 1}월 ${selectedDate.getDate()}일 (${dayName})`;
+            
+            // 데이터 로드
+            const savedText = localStorage.getItem('gratitude_' + dateString);
+            entryTextarea.value = savedText || '';
+            
+            // 텍스트 영역 애니메이션 효과
+            entryTextarea.classList.remove('fade-in');
+            void entryTextarea.offsetWidth; // 트리거 리플로우
+            entryTextarea.classList.add('fade-in');
+        }
+
+        // 일기 저장하기
+        function saveEntry() {
+            const dateString = formatDate(selectedDate);
+            const text = entryTextarea.value.trim();
+            
+            if (text) {
+                localStorage.setItem('gratitude_' + dateString, text);
+                showToast();
+            } else {
+                localStorage.removeItem('gratitude_' + dateString);
+            }
+            renderCalendar(); // 달력 마커(하트) 업데이트
+        }
+
+        // 저장 완료 토스트 알림
+        function showToast() {
+            saveToast.classList.remove('opacity-0');
+            saveToast.classList.add('opacity-100');
+            setTimeout(() => {
+                saveToast.classList.remove('opacity-100');
+                saveToast.classList.add('opacity-0');
+            }, 2000);
+        }
+
+        // 이벤트 리스너 세팅
+        document.getElementById('prev-month').onclick = () => {
+            currentNavDate.setMonth(currentNavDate.getMonth() - 1);
+            renderCalendar();
+        };
+
+        document.getElementById('next-month').onclick = () => {
+            currentNavDate.setMonth(currentNavDate.getMonth() + 1);
+            renderCalendar();
+        };
+
+        document.getElementById('save-btn').onclick = saveEntry;
+
+        // 초기 화면 세팅
+        renderCalendar();
+        loadEntry();
+    </script>
+</body>
+</html>

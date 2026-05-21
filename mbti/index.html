@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>초등학생 MBTI 마법사</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons (Phosphor, FontAwesome 대신 경량 아이콘 사용) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* 커스텀 라디오 버튼 스타일링을 위한 CSS */
+    input[type="radio"]:checked + div {
+      border-color: #d946ef; /* fuchsia-500 */
+      background-color: #fdf4ff; /* fuchsia-50 */
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+    input[type="radio"]:checked + div .radio-inner {
+      border-color: #d946ef;
+    }
+    input[type="radio"]:checked + div .radio-dot {
+      display: block;
+      background-color: #d946ef;
+    }
+    /* 옵션 B용 커스텀 컬러 (Cyan) */
+    input[type="radio"].cyan-radio:checked + div {
+      border-color: #06b6d4; /* cyan-500 */
+      background-color: #ecfeff; /* cyan-50 */
+    }
+    input[type="radio"].cyan-radio:checked + div .radio-inner {
+      border-color: #06b6d4;
+    }
+    input[type="radio"].cyan-radio:checked + div .radio-dot {
+      background-color: #06b6d4;
+    }
+    
+    /* 페이드 인 애니메이션 */
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 font-sans text-slate-800 pb-12">
+
+  <!-- 상단 네비게이션 바 -->
+  <header class="bg-white shadow-sm sticky top-0 z-10">
+    <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-center">
+      <i data-lucide="sparkles" class="w-6 h-6 text-fuchsia-500 mr-2"></i>
+      <h1 class="text-xl font-extrabold bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">
+        나의 마법 MBTI 찾기 ✨
+      </h1>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 mt-8" id="app-container">
+    <!-- 화면이 자바스크립트로 렌더링될 위치 -->
+  </main>
+
+  <script>
+    // --- [데이터 영역] 초등학생 눈높이에 맞춘 MBTI 문항 ---
+    const QUESTIONS = [
+      {
+        id: 1, dimension: 'EI',
+        question: "쉬는 시간 종이 쳤어! 나는 지금 뭘 하고 싶을까?",
+        optionA: { text: "친구들한테 달려가서 같이 숨바꼭질이나 얼음땡을 한다! 🏃‍♂️", value: 'E' },
+        optionB: { text: "내 자리에 앉아서 좋아하는 책을 읽거나 그림을 그린다. 🎨", value: 'I' }
+      },
+      {
+        id: 2, dimension: 'SN',
+        question: "만약 내가 마법사가 된다면?",
+        optionA: { text: "투명 망토, 하늘을 나는 빗자루 같은 진짜 쓸 수 있는 마법 아이템을 만들래! 🧹", value: 'S' },
+        optionB: { text: "구름 위를 걷는 마법, 동물과 대화하는 마법 같은 신기한 상상을 해볼래! ✨", value: 'N' }
+      },
+      {
+        id: 3, dimension: 'TF',
+        question: "친구가 '나 어제 강아지 잃어버려서 너무 슬퍼...'라고 할 때 나는?",
+        optionA: { text: "'어디서 잃어버렸어? 언제 마지막으로 봤어? 같이 찾아보자!' 하고 방법을 찾는다. 🕵️‍♂️", value: 'T' },
+        optionB: { text: "'진짜? 너무 슬프겠다... 어떡해...' 하고 친구 마음을 먼저 안아준다. 😭", value: 'F' }
+      },
+      {
+        id: 4, dimension: 'JP',
+        question: "여름방학 숙제를 할 때 나는?",
+        optionA: { text: "방학 첫날부터 계획표를 짜고 매일매일 조금씩 한다! 📅", value: 'J' },
+        optionB: { text: "일단 신나게 놀고, 개학 며칠 전에 후다닥 해치운다! 🎢", value: 'P' }
+      },
+      {
+        id: 5, dimension: 'EI',
+        question: "처음 보는 친구들이 많은 모둠 활동 시간에 나는?",
+        optionA: { text: "먼저 '안녕! 나는 OO이야, 넌 이름이 뭐야?' 하고 씩씩하게 말 건다. 🙋‍♂️", value: 'E' },
+        optionB: { text: "친구가 먼저 다가와서 말을 걸어줄 때까지 조금 부끄러워서 기다린다. 😳", value: 'I' }
+      },
+      {
+        id: 6, dimension: 'SN',
+        question: "레고 블록으로 성을 만들 때 나는?",
+        optionA: { text: "설명서를 꼼꼼히 보고 똑같이 멋지게 조립한다! 📖", value: 'S' },
+        optionB: { text: "내 마음대로 상상해서 우주선 모양의 성을 만든다! 🚀", value: 'N' }
+      },
+      {
+        id: 7, dimension: 'TF',
+        question: "친구랑 게임을 하다가 내가 졌을 때 나는?",
+        optionA: { text: "'아쉽다! 다음엔 이렇게 작전을 짜서 이겨야지!' 생각한다. 🎮", value: 'T' },
+        optionB: { text: "'친구가 이겨서 기분 좋겠다, 그래도 난 져서 조금 속상해'라고 느낀다. 🥺", value: 'F' }
+      },
+      {
+        id: 8, dimension: 'JP',
+        question: "주말에 가족이랑 놀러 가기로 했을 때 나는?",
+        optionA: { text: "몇 시에 출발하고 어디 갈지 미리 딱 정해져 있는 게 좋아! ⏰", value: 'J' },
+        optionB: { text: "그날 기분에 따라 발길 닿는 대로 아무 데나 가는 게 더 재밌어! 🌈", value: 'P' }
+      }
+    ];
+
+    // --- [데이터 영역] 초등학생 눈높이 MBTI 결과 ---
+    const MBTI_RESULTS = {
+      ESTJ: { title: "대장님 스타일 꼬마 캡틴! ⚓", strengths: "규칙을 잘 지키고, 친구들을 잘 이끌어줘요.", weaknesses: "가끔 친구들에게 잔소리를 할 때가 있어요.", study: "계획표를 딱! 짜고 목표를 세워서 공부하면 최고예요.", jobs: "학교 회장, 경찰관, 멋진 회사 대표님" },
+      ENTJ: { title: "당찬 꼬마 장군님! 🦁", strengths: "어려운 일도 척척 해결하고 자신감이 넘쳐요.", weaknesses: "지는 걸 너무 싫어해서 가끔 욱할 수 있어요.", study: "내가 왜 이걸 공부해야 하는지 이해하면 엄청 잘해요.", jobs: "발명가, 재판관, 게임 회사 사장님" },
+      ESFJ: { title: "다정한 우리 반 반장! 🥰", strengths: "친구들을 잘 도와주고 인기가 아주 많아요.", weaknesses: "다른 사람 눈치를 조금 많이 볼 때가 있어요.", study: "친구들이랑 같이 퀴즈를 내면서 공부하면 좋아요.", jobs: "선생님, 의사, 인기 유튜버" },
+      ENFJ: { title: "따뜻한 마음을 가진 히어로! 🦸‍♀️", strengths: "친구들의 마음을 잘 알아주고 용기를 줘요.", weaknesses: "모두를 다 도와주려다 내가 힘들 수 있어요.", study: "배운 걸 친구들에게 설명해 주면서 복습해보세요.", jobs: "심리상담사, 방송국 PD, 외교관" },
+      ESTP: { title: "에너지 뿜뿜 액션 스타! ⚡", strengths: "운동도 잘하고 눈치가 빨라서 인싸예요.", weaknesses: "가만히 앉아있는 걸 너무 지루해해요.", study: "직접 손으로 만들고 실험하면서 배우는 게 좋아요.", jobs: "소방관, 운동선수, 탐험가" },
+      ENTP: { title: "호기심 천국 꼬마 발명가! 💡", strengths: "아이디어가 퐁퐁 솟아나고 재치가 넘쳐요.", weaknesses: "시작은 잘하는데 끝까지 마무리하는 걸 어려워해요.", study: "재미있는 질문을 던지면서 토론하듯 공부해보세요.", jobs: "크리에이터, 과학자, 영화감독" },
+      ESFP: { title: "반짝반짝 아이돌 스타! 🎤", strengths: "항상 웃고 재미있어서 주변에 친구가 많아요.", weaknesses: "노는 게 너무 좋아서 숙제를 깜빡할 때가 있어요.", study: "노래나 랩으로 외우거나 게임처럼 공부하면 쏙쏙 들어와요.", jobs: "아이돌, 연예인, 파티 플래너" },
+      ENFP: { title: "상상력 대장 팅커벨! 🧚‍♂️", strengths: "엉뚱하고 기발한 생각이 가득해서 같이 있으면 즐거워요.", weaknesses: "이것저것 다 하고 싶어서 하나에 집중하기 힘들어요.", study: "예쁜 공책에 알록달록 색칠하며 상상력을 발휘해봐요.", jobs: "동화작가, 디자이너, 애니메이터" },
+      ISTJ: { title: "꼼꼼한 꼬마 탐정님! 🔍", strengths: "책임감이 강하고 한 번 맡은 일은 끝까지 해내요.", weaknesses: "새로운 걸 시작할 때 조금 겁이 날 수 있어요.", study: "조용한 곳에서 혼자 차근차근 책을 읽는 게 최고예요.", jobs: "회계사, 도서관 사서, 과학 수사대" },
+      INTJ: { title: "천재 꼬마 마법사! 🧙‍♂️", strengths: "혼자서 척척! 생각하는 힘이 아주 깊고 똑똑해요.", weaknesses: "친구가 말 걸어도 내 생각에 빠져서 못 들을 때가 있어요.", study: "어려운 퍼즐을 풀듯이 혼자 깊게 파고드는 공부가 맞아요.", jobs: "프로그래머, 우주 과학자, 전략가" },
+      ISFJ: { title: "따뜻한 수호천사! 👼", strengths: "기억력이 아주 좋고 친구들을 조용히 잘 챙겨줘요.", weaknesses: "내가 하고 싶은 말을 꾹 참을 때가 많아요.", study: "선생님이 알려주신 걸 꼼꼼히 노트에 적으면서 공부해요.", jobs: "간호사, 수의사, 유치원 선생님" },
+      INFJ: { title: "신비로운 꼬마 예언가! 🔮", strengths: "상상력이 풍부하고 친구의 진짜 마음을 잘 알아채요.", weaknesses: "생각이 너무 많아서 가끔 혼자만의 시간이 꼭 필요해요.", study: "조용한 음악을 들으며 혼자만의 공간에서 공부해보세요.", jobs: "소설가, 예술가, 상담 선생님" },
+      ISTP: { title: "손재주 마술사! 🛠️", strengths: "기계를 잘 다루고 위기 상황에서 아주 침착해요.", weaknesses: "말수가 적어서 친구들이 내 마음을 모를 때가 있어요.", study: "글만 읽는 것보다 직접 보고 만지면서 원리를 깨우쳐요.", jobs: "카레이서, 비행기 조종사, 컴퓨터 엔지니어" },
+      INTP: { title: "똑똑한 꼬마 아인슈타인! 🧠", strengths: "왜 그럴까? 궁금한 게 많고 논리적으로 잘 생각해요.", weaknesses: "정리 정돈하는 게 세상에서 제일 귀찮아요.", study: "관심 있는 주제 하나를 박사님처럼 엄청 깊게 파보세요.", jobs: "대학교수, 해커, 철학자" },
+      ISFP: { title: "다정다감 꼬마 예술가! 🎨", strengths: "마음이 따뜻하고 그림이나 음악 등 예술을 잘해요.", weaknesses: "누가 나한테 화를 내면 너무 상처받아요.", study: "자연 속이나 예쁜 카페 같은 기분 좋은 곳에서 공부해요.", jobs: "화가, 요리사, 동물 조련사" },
+      INFP: { title: "꿈꾸는 어린 왕자! 👑", strengths: "마음속에 예쁜 우주를 품고 있고 아주 착해요.", weaknesses: "규칙이 너무 빡빡한 곳에서는 숨이 막혀요.", study: "내가 좋아하는 과목부터 재미있는 이야기로 만들어서 공부해요.", jobs: "시인, 일러스트레이터, 환경 운동가" }
+    };
+
+    // 전역 상태 변수
+    let currentStep = 'intro'; // 'intro', 'quiz', 'result'
+    let userAnswers = {};
+    let finalMbti = '';
+    let errorMessage = '';
+
+    const appContainer = document.getElementById('app-container');
+
+    // 화면을 상태에 따라 다시 그리는 함수
+    function render() {
+      appContainer.innerHTML = ''; // 컨테이너 비우기
+
+      if (currentStep === 'intro') {
+        renderIntro();
+      } else if (currentStep === 'quiz') {
+        renderQuiz();
+      } else if (currentStep === 'result') {
+        renderResult();
+      }
+
+      // Lucide 아이콘 다시 그리기 (동적 생성 요소에 적용)
+      lucide.createIcons();
+    }
+
+    // 1. 시작 화면 렌더링
+    function renderIntro() {
+      const html = `
+        <div class="fade-in bg-white rounded-3xl shadow-xl p-8 text-center border border-slate-100 transform transition-all hover:shadow-2xl">
+          <div class="w-24 h-24 mx-auto bg-gradient-to-tr from-violet-200 to-fuchsia-200 rounded-full flex items-center justify-center mb-6">
+            <i data-lucide="star" class="w-12 h-12 text-violet-600"></i>
+          </div>
+          <h2 class="text-3xl font-bold mb-4 text-slate-800">
+            나는 어떤 <span class="text-fuchsia-500">마법사</span>일까?
+          </h2>
+          <p class="text-lg text-slate-600 mb-8 leading-relaxed">
+            학교에서, 친구들과 놀 때 나는 어떤 모습일까?<br/>
+            간단한 질문에 답하고 나의 숨겨진 마법 능력을 찾아봐요! 🪄
+          </p>
+          <button 
+            onclick="goToQuiz()"
+            class="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all transform rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-500 hover:scale-105 hover:shadow-lg hover:shadow-fuchsia-500/30"
+          >
+            마법 여행 출발하기
+            <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
+          </button>
+        </div>
+      `;
+      appContainer.innerHTML = html;
+    }
+
+    // 2. 퀴즈 화면 렌더링
+    function renderQuiz() {
+      let questionsHtml = QUESTIONS.map((q, index) => {
+        const isCheckedA = userAnswers[q.id] === q.optionA.value ? 'checked' : '';
+        const isCheckedB = userAnswers[q.id] === q.optionB.value ? 'checked' : '';
+
+        return `
+          <div class="bg-white rounded-3xl shadow-md p-6 border border-slate-100 mb-6 fade-in" style="animation-delay: ${index * 0.05}s">
+            <div class="flex items-start mb-6">
+              <div class="bg-gradient-to-br from-cyan-400 to-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 mt-1 mr-3">
+                Q${index + 1}
+              </div>
+              <h3 class="text-xl font-bold text-slate-800 leading-snug">
+                ${q.question}
+              </h3>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- 옵션 A -->
+              <label class="relative cursor-pointer h-full block">
+                <input 
+                  type="radio" 
+                  name="q-${q.id}" 
+                  class="sr-only fuchsia-radio"
+                  value="${q.optionA.value}"
+                  onchange="handleSelect(${q.id}, '${q.optionA.value}')"
+                  ${isCheckedA}
+                />
+                <div class="h-full p-5 rounded-2xl border-2 border-slate-200 bg-slate-50 transition-all hover:bg-slate-100 flex flex-col">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="radio-inner w-5 h-5 rounded-full border-2 border-slate-300 flex items-center justify-center transition-colors">
+                      <div class="radio-dot w-2.5 h-2.5 rounded-full hidden transition-colors"></div>
+                    </span>
+                  </div>
+                  <p class="text-slate-700 font-medium text-lg leading-relaxed flex-grow">
+                    ${q.optionA.text}
+                  </p>
+                </div>
+              </label>
+
+              <!-- 옵션 B -->
+              <label class="relative cursor-pointer h-full block">
+                <input 
+                  type="radio" 
+                  name="q-${q.id}" 
+                  class="sr-only cyan-radio"
+                  value="${q.optionB.value}"
+                  onchange="handleSelect(${q.id}, '${q.optionB.value}')"
+                  ${isCheckedB}
+                />
+                <div class="h-full p-5 rounded-2xl border-2 border-slate-200 bg-slate-50 transition-all hover:bg-slate-100 flex flex-col">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="radio-inner w-5 h-5 rounded-full border-2 border-slate-300 flex items-center justify-center transition-colors">
+                      <div class="radio-dot w-2.5 h-2.5 rounded-full hidden transition-colors"></div>
+                    </span>
+                  </div>
+                  <p class="text-slate-700 font-medium text-lg leading-relaxed flex-grow">
+                    ${q.optionB.text}
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      let errorHtml = '';
+      if (errorMessage) {
+        errorHtml = `
+          <div class="flex items-center justify-center text-rose-500 bg-rose-50 p-4 rounded-xl font-bold animate-bounce mb-6">
+            <i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i>
+            ${errorMessage}
+          </div>
+        `;
+      }
+
+      const html = `
+        <div class="space-y-2 fade-in">
+          <div class="bg-violet-100 rounded-2xl p-4 text-center mb-6">
+            <p class="text-violet-800 font-semibold">
+              총 ${QUESTIONS.length}개의 질문 중 내가 더 끌리는 대답을 콕! 찍어주세요.
+            </p>
+          </div>
+
+          ${questionsHtml}
+          ${errorHtml}
+
+          <div class="text-center pt-6 pb-12">
+            <button 
+              onclick="calculateResult()"
+              class="inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white transition-all transform rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-500 hover:scale-105 hover:shadow-xl hover:shadow-fuchsia-500/30 w-full sm:w-auto"
+            >
+              <i data-lucide="check-circle-2" class="w-6 h-6 mr-2"></i>
+              나의 MBTI 결과 보기!
+            </button>
+          </div>
+        </div>
+      `;
+      appContainer.innerHTML = html;
+    }
+
+    // 3. 결과 화면 렌더링
+    function renderResult() {
+      const resultData = MBTI_RESULTS[finalMbti];
+      if (!resultData) return;
+
+      const html = `
+        <div class="fade-in bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
+          <!-- 결과 상단 헤더 (Canva 스타일 화려한 배경) -->
+          <div class="bg-gradient-to-br from-violet-600 via-fuchsia-500 to-cyan-500 p-10 text-center text-white relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full opacity-20" style="background-image: url('data:image/svg+xml,%3Csvg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 20 20\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23ffffff\\' fill-opacity=\\'0.4\\' fill-rule=\\'evenodd\\'%3E%3Ccircle cx=\\'3\\' cy=\\'3\\' r=\\'3\\'/%3E%3Ccircle cx=\\'13\\' cy=\\'13\\' r=\\'3\\'/%3E%3C/g%3E%3C/svg%3E');"></div>
+            <p class="text-violet-100 font-bold mb-2 text-lg relative z-10">두구두구두구... 나의 결과는?!</p>
+            <h2 class="text-5xl font-black mb-4 tracking-wider relative z-10 drop-shadow-md">
+              ${finalMbti}
+            </h2>
+            <h3 class="text-3xl font-bold relative z-10">
+              ${resultData.title}
+            </h3>
+          </div>
+
+          <!-- 결과 상세 내용 -->
+          <div class="p-8 space-y-8">
+            <!-- 강점과 약점 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 transition-all hover:shadow-md">
+                <h4 class="text-blue-800 font-bold text-xl mb-3 flex items-center">
+                  <span class="bg-blue-200 w-8 h-8 rounded-full flex items-center justify-center mr-2">👍</span>
+                  나의 멋진 점
+                </h4>
+                <p class="text-slate-700 text-lg leading-relaxed">
+                  ${resultData.strengths}
+                </p>
+              </div>
+              
+              <div class="bg-rose-50 p-6 rounded-2xl border border-rose-100 transition-all hover:shadow-md">
+                <h4 class="text-rose-800 font-bold text-xl mb-3 flex items-center">
+                  <span class="bg-rose-200 w-8 h-8 rounded-full flex items-center justify-center mr-2">🥺</span>
+                  조금 조심할 점
+                </h4>
+                <p class="text-slate-700 text-lg leading-relaxed">
+                  ${resultData.weaknesses}
+                </p>
+              </div>
+            </div>
+
+            <!-- 학습 방법 & 추천 직업 -->
+            <div class="bg-violet-50 p-6 rounded-2xl border border-violet-100 transition-all hover:shadow-md">
+              <h4 class="text-violet-800 font-bold text-xl mb-3 flex items-center">
+                <span class="bg-violet-200 w-8 h-8 rounded-full flex items-center justify-center mr-2">📚</span>
+                나에게 딱 맞는 공부법
+              </h4>
+              <p class="text-slate-700 text-lg leading-relaxed">
+                ${resultData.study}
+              </p>
+            </div>
+
+            <div class="bg-amber-50 p-6 rounded-2xl border border-amber-100 transition-all hover:shadow-md">
+              <h4 class="text-amber-800 font-bold text-xl mb-3 flex items-center">
+                <span class="bg-amber-200 w-8 h-8 rounded-full flex items-center justify-center mr-2">⭐</span>
+                어른이 되면 어울리는 직업
+              </h4>
+              <p class="text-slate-700 text-lg font-medium">
+                ${resultData.jobs} 등
+              </p>
+            </div>
+
+            <!-- 다시하기 버튼 -->
+            <div class="text-center pt-4">
+              <button 
+                onclick="resetQuiz()"
+                class="inline-flex items-center justify-center px-8 py-3 text-lg font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors rounded-full"
+              >
+                <i data-lucide="refresh-ccw" class="w-5 h-5 mr-2"></i>
+                친구한테 추천하고 다시 하기
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      appContainer.innerHTML = html;
+    }
+
+    // --- 이벤트 핸들러 함수들 ---
+
+    function goToQuiz() {
+      currentStep = 'quiz';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      render();
+    }
+
+    // 사용자가 라디오 버튼을 클릭했을 때 호출됨
+    window.handleSelect = function(questionId, value) {
+      userAnswers[questionId] = value;
+      errorMessage = ''; // 선택하면 에러 메시지 삭제
+      
+      // 상태 변경 후 전체를 다시 렌더링하지 않고, 
+      // 바닐라 JS의 경우 CSS 선택자로 시각적 처리만 담당하거나, 필요한 경우에만 렌더를 부를 수 있음.
+      // 여기서는 라디오 버튼의 checked 속성이 브라우저에 의해 자동 관리되므로 전체 렌더링 생략으로 성능 확보.
+    };
+
+    function calculateResult() {
+      // 1. 모든 질문에 답했는지 검사
+      if (Object.keys(userAnswers).length < QUESTIONS.length) {
+        errorMessage = '앗! 아직 안 푼 문제가 있어요. 모든 질문에 답해주세요! 🥺';
+        render(); // 에러 메시지를 띄우기 위해 리렌더링
+        return;
+      }
+
+      // 2. 점수 계산 로직
+      let scores = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+      
+      for (const key in userAnswers) {
+        const val = userAnswers[key];
+        scores[val]++;
+      }
+
+      // 3. MBTI 조합 생성
+      const type = 
+        (scores.E > scores.I ? 'E' : 'I') +
+        (scores.S > scores.N ? 'S' : 'N') +
+        (scores.T > scores.F ? 'T' : 'F') +
+        (scores.J > scores.P ? 'J' : 'P');
+
+      finalMbti = type;
+      currentStep = 'result';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      render();
+    }
+
+    function resetQuiz() {
+      userAnswers = {};
+      finalMbti = '';
+      errorMessage = '';
+      currentStep = 'intro';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      render();
+    }
+
+    // --- 앱 초기 실행 ---
+    document.addEventListener('DOMContentLoaded', () => {
+      render(); // 첫 화면(intro) 그리기
+    });
+
+  </script>
+</body>
+</html>
