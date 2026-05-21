@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트 일정 관리</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-sky-50 min-h-screen flex items-center justify-center p-4 font-sans text-slate-800">
+
+    <a href="../index.html" class="fixed top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-full shadow-lg hover:bg-slate-700 hover:scale-105 transition-all text-sm font-bold">
+        ← 메인으로
+    </a>
+
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-sky-100 flex flex-col h-[85vh]">
+        
+        <div class="bg-gradient-to-r from-cyan-400 to-blue-500 p-5 text-center shadow-sm relative z-10">
+            <h1 class="text-2xl font-extrabold text-white tracking-tight drop-shadow-md">
+                <i class="fas fa-calendar-alt text-cyan-100 mr-2"></i>스마트 일정 관리
+            </h1>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+            
+            <div class="bg-slate-50 rounded-2xl p-4 shadow-inner border border-slate-200">
+                <div class="flex justify-between items-center mb-4 px-2">
+                    <button id="prev-month" class="text-blue-500 hover:text-blue-700 transition px-2 py-1 rounded-full hover:bg-blue-100">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h2 id="month-year" class="text-lg font-bold text-slate-700"></h2>
+                    <button id="next-month" class="text-blue-500 hover:text-blue-700 transition px-2 py-1 rounded-full hover:bg-blue-100">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-sm">
+                    </div>
+            </div>
+
+            <div class="flex flex-col flex-1">
+                <h3 id="selected-date-label" class="font-bold text-slate-700 mb-3 border-b-2 border-sky-200 pb-2 flex justify-between items-center">
+                    <span>날짜를 선택하세요</span>
+                    <span id="task-count" class="text-xs bg-sky-100 text-sky-600 px-2 py-1 rounded-full">0개</span>
+                </h3>
+                
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="task-input" class="flex-1 px-4 py-2 bg-sky-50 border border-sky-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white transition text-sm" placeholder="새로운 일정을 입력하세요...">
+                    <button id="add-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-bold transition shadow-sm">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+
+                <ul id="task-list" class="space-y-2 flex-1 overflow-y-auto">
+                    </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const calendarGrid = document.getElementById('calendar-grid');
+        const monthYear = document.getElementById('month-year');
+        const selectedDateLabel = document.getElementById('selected-date-label').querySelector('span');
+        const taskCountLabel = document.getElementById('task-count');
+        const taskInput = document.getElementById('task-input');
+        const taskList = document.getElementById('task-list');
+        const addBtn = document.getElementById('add-btn');
+
+        let currentNavDate = new Date();
+        let selectedDate = new Date();
+
+        function formatDate(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        // 달력 그리기
+        function renderCalendar() {
+            calendarGrid.innerHTML = '';
+            const year = currentNavDate.getFullYear();
+            const month = currentNavDate.getMonth();
+            monthYear.textContent = `${year}년 ${month + 1}월`;
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const lastDay = new Date(year, month + 1, 0).getDate();
+
+            const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+            daysOfWeek.forEach((day, index) => {
+                const el = document.createElement('div');
+                el.className = `text-center font-bold pb-2 text-xs ${index === 0 ? 'text-red-400' : index === 6 ? 'text-blue-400' : 'text-slate-400'}`;
+                el.textContent = day;
+                calendarGrid.appendChild(el);
+            });
+
+            for (let i = 0; i < firstDayIndex; i++) {
+                calendarGrid.appendChild(document.createElement('div'));
+            }
+
+            for (let i = 1; i <= lastDay; i++) {
+                const dateObj = new Date(year, month, i);
+                const dateString = formatDate(dateObj);
+                const el = document.createElement('div');
+                el.className = 'flex items-center justify-center p-1 rounded-lg cursor-pointer transition relative h-10 w-full mx-auto text-sm';
+
+                if (dateString === formatDate(selectedDate)) {
+                    el.classList.add('bg-blue-500', 'text-white', 'font-bold', 'shadow-md');
+                } else {
+                    el.classList.add('hover:bg-blue-100', 'text-slate-700');
+                }
+
+                // 일정이 있는 날짜에 마커 표시
+                const savedTasks = JSON.parse(localStorage.getItem('schedule_' + dateString) || '[]');
+                if (savedTasks.length > 0) {
+                    const marker = document.createElement('div');
+                    marker.className = `absolute bottom-1 w-1.5 h-1.5 rounded-full ${dateString === formatDate(selectedDate) ? 'bg-white' : 'bg-cyan-500'}`;
+                    el.appendChild(marker);
+                }
+
+                el.textContent = i;
+                if(savedTasks.length > 0) el.appendChild(el.firstChild); // 텍스트를 위로 올림
+
+                el.onclick = () => {
+                    selectedDate = dateObj;
+                    renderCalendar();
+                    loadTasks();
+                };
+                calendarGrid.appendChild(el);
+            }
+        }
+
+        // 특정 날짜의 일정 불러오기
+        function loadTasks() {
+            const dateString = formatDate(selectedDate);
+            const days = ['일', '월', '화', '수', '목', '금', '토'];
+            selectedDateLabel.textContent = `${selectedDate.getMonth() + 1}월 ${selectedDate.getDate()}일 (${days[selectedDate.getDay()]})`;
+            
+            const tasks = JSON.parse(localStorage.getItem('schedule_' + dateString) || '[]');
+            taskCountLabel.textContent = `${tasks.length}개`;
+            
+            taskList.innerHTML = '';
+            if(tasks.length === 0) {
+                taskList.innerHTML = '<li class="text-center text-slate-400 text-sm mt-4 fade-in">등록된 일정이 없습니다.</li>';
+                return;
+            }
+
+            tasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100 shadow-sm fade-in';
+                li.innerHTML = `
+                    <span class="text-slate-700 text-sm flex-1 break-all mr-2"><i class="fas fa-check text-cyan-400 mr-2 text-xs"></i>${task}</span>
+                    <button onclick="deleteTask(${index})" class="text-red-400 hover:text-red-600 transition p-2 bg-red-50 rounded-lg hover:bg-red-100">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                `;
+                taskList.appendChild(li);
+            });
+        }
+
+        // 일정 추가
+        function addTask() {
+            const text = taskInput.value.trim();
+            if (!text) return;
+
+            const dateString = formatDate(selectedDate);
+            const tasks = JSON.parse(localStorage.getItem('schedule_' + dateString) || '[]');
+            tasks.push(text);
+            localStorage.setItem('schedule_' + dateString, JSON.stringify(tasks));
+            
+            taskInput.value = '';
+            renderCalendar();
+            loadTasks();
+        }
+
+        // 일정 삭제
+        window.deleteTask = function(index) {
+            const dateString = formatDate(selectedDate);
+            const tasks = JSON.parse(localStorage.getItem('schedule_' + dateString) || '[]');
+            tasks.splice(index, 1);
+            localStorage.setItem('schedule_' + dateString, JSON.stringify(tasks));
+            
+            renderCalendar();
+            loadTasks();
+        };
+
+        // 이벤트 리스너
+        document.getElementById('prev-month').onclick = () => { currentNavDate.setMonth(currentNavDate.getMonth() - 1); renderCalendar(); };
+        document.getElementById('next-month').onclick = () => { currentNavDate.setMonth(currentNavDate.getMonth() + 1); renderCalendar(); };
+        addBtn.onclick = addTask;
+        taskInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') addTask(); });
+
+        // 초기화
+        renderCalendar();
+        loadTasks();
+    </script>
+</body>
+<a href="../index.html" class="fixed top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-full shadow-lg hover:bg-slate-700 hover:scale-105 transition-all text-sm font-bold">
+    ← 메인으로
+</a>
+</html>

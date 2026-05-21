@@ -5,75 +5,104 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>디지털 교육 실습 과제</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-50 min-h-screen flex flex-col font-sans text-slate-800">
+<body class="bg-slate-50 dark:bg-slate-900 min-h-screen flex flex-col font-sans text-slate-800 dark:text-slate-100 transition-colors duration-300">
     
-    <header class="bg-white shadow-sm border-b border-slate-200 py-10">
-        <div class="max-w-5xl mx-auto px-4 text-center">
-            <h1 class="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+    <header class="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700 py-10 relative transition-colors duration-300">
+        <button id="theme-toggle" class="absolute top-6 right-6 p-3 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-yellow-400 hover:scale-110 transition-transform">
+            <i id="theme-icon" class="fas fa-moon text-xl"></i>
+        </button>
+        <div class="max-w-6xl mx-auto px-4 text-center mt-4">
+            <h1 class="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
                 디지털 교육 인터랙티브 웹 과제 모음
             </h1>
-            <p class="mt-3 text-slate-500 font-medium text-lg">
+            <p class="mt-3 text-slate-500 dark:text-slate-400 font-medium text-lg">
                 학생들과의 원활한 소통과 참여를 돕기 위한 웹 애플리케이션
             </p>
         </div>
     </header>
 
-    <main class="flex-1 max-w-5xl mx-auto px-4 py-12 w-full flex items-center">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
+    <main class="flex-1 max-w-6xl mx-auto px-4 py-12 w-full flex items-center justify-center">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
             
-            <a href="./memory/index.html" class="group bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-slate-200 overflow-hidden flex flex-col">
+            <a href="./memory/index.html" class="group bg-white dark:bg-slate-800 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
                 <div class="h-40 bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
                     <i class="fas fa-brain text-5xl text-white opacity-90 group-hover:scale-110 transition-transform"></i>
                 </div>
                 <div class="p-6 flex-1 flex flex-col">
-                    <h2 class="text-xl font-bold text-slate-800 mb-2">두뇌 팡팡! 기억력 게임</h2>
-                    <p class="text-slate-600 text-sm flex-1 leading-relaxed">
-                        수업 중 조별 활동에 활용할 수 있는 상호작용형 이모티콘 짝맞추기 게임과 점수판입니다.
-                    </p>
-                    <div class="mt-6 text-indigo-500 font-bold text-sm flex items-center">
-                        과제 확인하기 <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
-                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">두뇌 팡팡! 기억력 게임</h2>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm flex-1 leading-relaxed">수업 중 조별 활동에 활용할 수 있는 상호작용형 게임입니다.</p>
                 </div>
             </a>
 
-            <a href="./mbti/index.html" class="group bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-slate-200 overflow-hidden flex flex-col">
+            <a href="./mbti/index.html" class="group bg-white dark:bg-slate-800 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
                 <div class="h-40 bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center">
                     <i class="fas fa-magic text-5xl text-white opacity-90 group-hover:scale-110 transition-transform"></i>
                 </div>
                 <div class="p-6 flex-1 flex flex-col">
-                    <h2 class="text-xl font-bold text-slate-800 mb-2">초등학생 MBTI 마법사</h2>
-                    <p class="text-slate-600 text-sm flex-1 leading-relaxed">
-                        학생들의 눈높이에 맞춘 친근한 질문과 결과로 구성된 맞춤형 성향 테스트입니다.
-                    </p>
-                    <div class="mt-6 text-fuchsia-500 font-bold text-sm flex items-center">
-                        과제 확인하기 <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
-                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">초등학생 MBTI 마법사</h2>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm flex-1 leading-relaxed">학생들 눈높이에 맞춘 성향 테스트입니다.</p>
                 </div>
             </a>
 
-            <a href="./diary/index.html" class="group bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-slate-200 overflow-hidden flex flex-col">
+            <a href="./diary/index.html" class="group bg-white dark:bg-slate-800 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
                 <div class="h-40 bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center">
                     <i class="fas fa-book-open pt-1 text-5xl text-white opacity-90 group-hover:scale-110 transition-transform"></i>
                 </div>
                 <div class="p-6 flex-1 flex flex-col">
-                    <h2 class="text-xl font-bold text-slate-800 mb-2">나의 감사 일기장</h2>
-                    <p class="text-slate-600 text-sm flex-1 leading-relaxed">
-                        로컬 스토리지를 활용하여 매일의 감사함을 스스로 기록하고 되돌아보는 달력형 일기장입니다.
-                    </p>
-                    <div class="mt-6 text-amber-500 font-bold text-sm flex items-center">
-                        과제 확인하기 <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
-                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">나의 감사 일기장</h2>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm flex-1 leading-relaxed">매일의 감사함을 기록하는 달력형 일기장입니다.</p>
+                </div>
+            </a>
+
+            <a href="./schedule/index.html" class="group bg-white dark:bg-slate-800 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+                <div class="h-40 bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
+                    <i class="fas fa-calendar-alt text-5xl text-white opacity-90 group-hover:scale-110 transition-transform"></i>
+                </div>
+                <div class="p-6 flex-1 flex flex-col">
+                    <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">스마트 일정 관리</h2>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm flex-1 leading-relaxed">달력과 연동하여 해야 할 일을 추가하고 삭제할 수 있는 앱입니다.</p>
                 </div>
             </a>
 
         </div>
     </main>
     
-    <footer class="bg-slate-800 text-slate-400 py-8 text-center text-sm">
+    <footer class="bg-slate-800 dark:bg-slate-950 text-slate-400 py-8 text-center text-sm transition-colors duration-300">
         <p>© 2026 Digital Education Practice Assignment.</p>
     </footer>
 
+    <script>
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        function updateIcon() {
+            if (document.documentElement.classList.contains('dark')) {
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+        }
+        updateIcon();
+
+        themeToggleBtn.addEventListener('click', function() {
+            document.documentElement.classList.toggle('dark');
+            if (document.documentElement.classList.contains('dark')) {
+                localStorage.theme = 'dark';
+            } else {
+                localStorage.theme = 'light';
+            }
+            updateIcon();
+        });
+    </script>
 </body>
 </html>
