@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기억력 매칭 게임 & 조별 점수판</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 카드 뒤집기 3D 효과를 위한 CSS */
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-6 font-sans">
+    
+    <div class="max-w-6xl w-full flex flex-col md:flex-row gap-8">
+        
+        <div class="flex-1 bg-white p-8 rounded-3xl shadow-2xl border border-purple-100">
+            <h1 class="text-3xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-fuchsia-500 to-cyan-500 text-center">
+                ✨ 두뇌 팡팡! 기억력 매칭 게임 ✨
+            </h1>
+            
+            <div id="game-board" class="grid grid-cols-4 gap-4 mb-8">
+                </div>
+
+            <button onclick="initGame()" class="w-full py-4 rounded-xl text-white font-bold text-lg bg-gradient-to-r from-purple-600 via-fuchsia-500 to-cyan-500 hover:opacity-90 transform transition hover:scale-[1.02] shadow-lg">
+                게임 다시 섞기 🔄
+            </button>
+        </div>
+
+        <div class="w-full md:w-96 bg-white p-8 rounded-3xl shadow-2xl border border-cyan-100 flex flex-col">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 text-center flex items-center justify-center gap-2">
+                🏆 조별 점수판
+            </h2>
+            
+            <div id="scoreboard" class="flex flex-col gap-4 flex-1">
+                </div>
+
+            <button onclick="resetScores()" class="mt-8 w-full py-3 rounded-xl border-2 border-fuchsia-400 text-fuchsia-600 font-bold hover:bg-fuchsia-50 transition flex items-center justify-center gap-2">
+                점수 전체 초기화 🗑️
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 게임 설정 ---
+        const emojis = ['🐶', '🦊', '🐼', '🐸', '🦄', '🐳']; // 6쌍의 이모티콘
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let isProcessing = false; // 카드 애니메이션 중 클릭 방지
+
+        // --- 점수판 설정 ---
+        let scores = [0, 0, 0, 0, 0, 0]; // 1조 ~ 6조 점수
+
+        // --- DOM 요소 ---
+        const gameBoard = document.getElementById('game-board');
+        const scoreboard = document.getElementById('scoreboard');
+
+        // 게임 초기화 및 시작
+        function initGame() {
+            gameBoard.innerHTML = '';
+            flippedCards = [];
+            matchedPairs = 0;
+            isProcessing = false;
+
+            // 카드 배열 생성 및 섞기
+            cards = [...emojis, ...emojis];
+            cards.sort(() => Math.random() - 0.5);
+
+            // 카드 UI 생성
+            cards.forEach((emoji, index) => {
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = 'perspective-1000 aspect-square cursor-pointer';
+                cardWrapper.dataset.index = index;
+                cardWrapper.dataset.emoji = emoji;
+                
+                const cardInner = document.createElement('div');
+                cardInner.className = 'relative w-full h-full duration-500 transform-style-3d transition-transform';
+                
+                // 카드 앞면 (물음표 또는 디자인)
+                const cardFront = document.createElement('div');
+                cardFront.className = 'absolute w-full h-full backface-hidden bg-gradient-to-br from-purple-100 to-cyan-100 rounded-2xl border-2 border-purple-200 flex items-center justify-center text-4xl shadow-sm hover:shadow-md transition';
+                cardFront.innerHTML = '❓';
+
+                // 카드 뒷면 (이모티콘)
+                const cardBack = document.createElement('div');
+                cardBack.className = 'absolute w-full h-full backface-hidden rotate-y-180 bg-white rounded-2xl border-2 border-cyan-300 flex items-center justify-center text-5xl shadow-md';
+                cardBack.innerHTML = emoji;
+
+                cardInner.appendChild(cardFront);
+                cardInner.appendChild(cardBack);
+                cardWrapper.appendChild(cardInner);
+
+                cardWrapper.addEventListener('click', () => handleCardClick(cardWrapper, cardInner));
+                gameBoard.appendChild(cardWrapper);
+            });
+        }
+
+        // 카드 클릭 처리
+        function handleCardClick(cardWrapper, cardInner) {
+            if (isProcessing) return; // 처리 중 클릭 방지
+            if (cardInner.classList.contains('rotate-y-180')) return; // 이미 뒤집힌 카드 무시
+
+            // 카드 뒤집기
+            cardInner.classList.add('rotate-y-180');
+            flippedCards.push({ wrapper: cardWrapper, inner: cardInner, emoji: cardWrapper.dataset.emoji });
+
+            if (flippedCards.length === 2) {
+                isProcessing = true;
+                checkMatch();
+            }
+        }
+
+        // 매칭 확인
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+
+            if (card1.emoji === card2.emoji) {
+                // 매칭 성공
+                setTimeout(() => {
+                    card1.inner.querySelector('.rotate-y-180').classList.add('bg-green-100', 'border-green-400');
+                    card2.inner.querySelector('.rotate-y-180').classList.add('bg-green-100', 'border-green-400');
+                    matchedPairs++;
+                    flippedCards = [];
+                    isProcessing = false;
+                    
+                    if(matchedPairs === emojis.length) {
+                        setTimeout(() => alert('🎉 모든 카드를 맞췄습니다!'), 300);
+                    }
+                }, 400);
+            } else {
+                // 매칭 실패
+                setTimeout(() => {
+                    card1.inner.classList.remove('rotate-y-180');
+                    card2.inner.classList.remove('rotate-y-180');
+                    flippedCards = [];
+                    isProcessing = false;
+                }, 1000); // 1초 후 다시 뒤집기
+            }
+        }
+
+        // 점수판 렌더링
+        function renderScoreboard() {
+            scoreboard.innerHTML = '';
+            scores.forEach((score, index) => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200';
+                
+                groupDiv.innerHTML = `
+                    <span class="text-xl font-bold text-gray-700">${index + 1}조</span>
+                    <div class="flex items-center gap-4">
+                        <span class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-cyan-500 w-8 text-center">${score}</span>
+                        <button onclick="addScore(${index})" class="w-10 h-10 rounded-full bg-cyan-100 text-cyan-600 font-bold text-xl hover:bg-cyan-200 hover:scale-110 transition flex items-center justify-center shadow-sm">
+                            +
+                        </button>
+                    </div>
+                `;
+                scoreboard.appendChild(groupDiv);
+            });
+        }
+
+        // 특정 조 점수 추가
+        function addScore(index) {
+            scores[index]++;
+            renderScoreboard();
+        }
+
+        // 점수 전체 초기화
+        function resetScores() {
+            if(confirm('모든 조의 점수를 초기화하시겠습니까?')) {
+                scores = [0, 0, 0, 0, 0, 0];
+                renderScoreboard();
+            }
+        }
+
+        // 초기 실행
+        initGame();
+        renderScoreboard();
+    </script>
+</body>
+</html>
